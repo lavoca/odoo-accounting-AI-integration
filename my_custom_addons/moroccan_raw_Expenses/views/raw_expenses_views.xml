@@ -11,7 +11,7 @@
                     <!-- We list the columns we want to show side-by-side in our spreadsheet row -->
                     <field name="name"/>
                     <field name="date"/>
-                    <field name="ammount"/>
+                    <field name="amount"/>
                     <field name="state"/>
                     
             </list>
@@ -36,8 +36,8 @@
                                 <field name="name"/>
                             </group>
                             <!-- Right Column Grid Group -->
-                            <group string="ammount">
-                                <field name="ammount"/>
+                            <group string="amount">
+                                <field name="amount"/>
                                 <field name="date" readonly="1"/> <!-- readonly="1" blocks users from typing in it -->
                             </group>
                         </group>
@@ -56,7 +56,7 @@
 
     <menuitem id="menu_moroccan_raw_expenses_root"
               name="raw expenses"
-              parent="account.menu_finance_entries" 
+              parent="account.menu_finance" 
               action="action_moroccan_raw_expenses"          
               sequence="50"/> <!-- Controls positioning. Higher numbers push the button lower down the menu list -->
 

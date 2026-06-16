@@ -7,7 +7,7 @@ class RawExpences(models.Model):
     
     name = fields.Char(string="Expense Description", required=True, default="new expense")
     date = fields.Date(string="Date", default=fields.Date.today)
-    ammount = fields.Float(string="Ammount")
+    amount = fields.Float(string="Amount")
     account_id = fields.Many2one('account.account', string="Account")
     state = fields.Selection([('draft','Draft'),('categorized','Categorized')], default='draft')
     
