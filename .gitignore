@@ -1,0 +1,29 @@
+# Docker database and storage data
+.addons/
+.db/
+pgdata/
+odoo-data/
+
+# Odoo data and logs
+filestore/
+sessions/
+*.log
+
+# Docker Compose environment variables
+.env
+
+# Ignore the entire Odoo core source code
+odoo_source/
+
+# Ignore Docker database and storage volumes
+.db/
+pgdata/
+odoo-data/
+filestore/
+
+# Ignore local IDE configurations
+.vscode/
+
+# Ignore standard Python cache files
+**/__pycache__/
+*.pyc

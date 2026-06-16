@@ -1,0 +1,27 @@
+services:
+  web:
+    image: odoo:19.0
+    depends_on:
+      - db
+    ports:
+      - "8069:8069"
+    volumes:
+      # This maps your local custom folder to Odoo's internal custom folder
+      - ./my_custom_addons:/mnt/extra-addons
+    environment:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=myodoo
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=myodoo
+      - POSTGRES_USER=odoo
+    volumes:
+      # This saves your database locally so you don't lose it when you restart
+      - odoo-db-data:/var/lib/postgresql/data
+
+volumes:
+  odoo-db-data:

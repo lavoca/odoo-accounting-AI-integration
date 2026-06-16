@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- 1. THE VIEW: How the data looks (A list/table view) -->
+    <record id="view_ai_audit_log_tree" model="ir.ui.view">
+        <field name="name">ai.audit.log.tree</field>
+        <field name="model">ai.audit.log</field>
+        <field name="arch" type="xml">
+            <list string="Audit Logs">
+                <field name="name"/>
+                <field name="invoice_id"/>
+                <field name="customer_id"/>
+                <field name="amount_total"/>
+                <field name="reason"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- 2. THE ACTION: What happens when you click the menu -->
+    <record id="action_ai_audit_log" model="ir.actions.act_window">
+        <field name="name">AI Audit Logs</field>
+        <field name="res_model">ai.audit.log</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- 3. THE MENU: The button in the sidebar -->
+    <!-- We attach it to the existing Invoicing app menu (account.menu_finance) -->
+    <menuitem id="menu_ai_audit_log" 
+              name="AI Audits" 
+              parent="account.menu_finance_reports" 
+              action="action_ai_audit_log" 
+              sequence="100"/>
+
+</odoo>

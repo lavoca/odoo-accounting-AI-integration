@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- This registers a new report action and automatically adds a 'Print' button -->
+    <record id="action_report_ai_audit_log" model="ir.actions.report">
+        <field name="name">AI Audit Log PDF</field>
+        <field name="model">ai.audit.log</field>
+        <field name="report_type">qweb-pdf</field>
+        <!-- This is the unique XML ID of the HTML template we will write next -->
+        <field name="report_name">ai_invoice_auditor.report_ai_audit_log_template</field>
+        <!-- The name of the downloaded file -->
+        <field name="attachment_use" eval="False"/>
+        <field name="binding_model_id" ref="model_ai_audit_log"/>
+        <field name="binding_type">report</field>
+    </record>
+
+     <!-- 2. THE QWEB TEMPLATE (The HTML layout) -->
+    <template id="report_ai_audit_log_template">
+        <!-- 'web.html_container' sets up the basic HTML document structure -->
+        <t t-call="web.html_container">
+            <!-- Odoo always passes the selected records in a variable called 'docs' -->
+            <t t-foreach="docs" t-as="doc">
+                <!-- 'web.external_layout' automatically adds your company's header and footer -->
+                <t t-call="web.external_layout">
+                    
+                    <!-- This 'page' class is required by Odoo's PDF printer -->
+                    <div class="page">
+                        <div class="oe_structure"/>
+
+                        <h2>AI Audit Security Log</h2>
+                        <hr/>
+
+                        <div class="row mt32 mb32">
+                            <div class="col-6">
+                                <strong>Log Reference:</strong> <span t-field="doc.name"/><br/>
+                                <strong>Flagged Date:</strong> <span t-field="doc.create_date"/><br/>
+                            </div>
+                            <div class="col-6">
+                                <strong>Customer:</strong> <span t-field="doc.customer_id.name"/><br/>
+                                <strong>Total Amount:</strong> <span t-field="doc.amount_total"/><br/>
+                            </div>
+                        </div>
+
+                        <table class="table table-sm o_main_table mt32">
+                            <thead>
+                                <tr>
+                                    <th>Related Invoice</th>
+                                    <th>Audit Flag Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span t-field="doc.invoice_id.name"/></td>
+                                    <td><span t-field="doc.reason"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>
