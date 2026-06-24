@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <odoo>
+    <!-- all the raw expenses listed view -->
     <record id="view_moroccan_raw_expenses_tree" model="ir.ui.view">
 
         <field name="name">moroccan.raw.expenses.tree</field>
@@ -8,52 +9,68 @@
         <field name="arch" type="xml">
 
             <list string="Moroccan Raw Expenses Spreadsheet">
-                    <!-- We list the columns we want to show side-by-side in our spreadsheet row -->
-                    <field name="name"/>
-                    <field name="date"/>
-                    <field name="amount"/>
-                    <field name="state"/>
-                    
+                <!-- We list the columns we want to show side-by-side in our spreadsheet row -->
+                <field name="name"/>
+                <field name="date"/>
+                <field name="amount"/>
+                <field name="account_id"/>
+                <field name="state"/>                    
             </list>
 
         </field>
     
     </record>
 
-
+    <!-- the form view where a single raw expense is created or updated (accessed when clicking on a raw expense in the list view above) -->
     <record id="view_moroccan_raw_expenses_form" model="ir.ui.view">
         <field name="name">moroccan.raw.expenses.form</field>
         <field name="model">moroccan.raw.expenses</field>
         <field name="arch" type="xml">
 
             <form string="Edit Expense">
-                    <!-- <sheet> creates the beautiful white paper canvas container look -->
-                    <sheet>
-                        <!-- <group> tags act like grid columns to align fields side-by-side beautifully -->
-                        <group>
-                            <!-- Left Column Grid Group -->
-                            <group string="expense">
-                                <field name="name"/>
-                            </group>
-                            <!-- Right Column Grid Group -->
-                            <group string="amount">
-                                <field name="amount"/>
-                                <field name="date" readonly="1"/> <!-- readonly="1" blocks users from typing in it -->
-                            </group>
+                <header> 
+                    <!-- type="object" tells Odoo that name refers to a Python function in your model. -->
+                    <button name="action_categorize_ai" type="object" string="auto categorize (AI)" class="oe_highlight"/> <!--button to categorize with AI and invokes the action_categorize_ai function-->
+                    <button name="action_post_to_accounting" type="object" string="create a journal entry" class="oe_highlight" invisible="state != 'categorized'"/> <!--button to post and create a new journal entry and invokes the action_post_to_accounting function-->
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <!-- <sheet> creates the beautiful white paper canvas container look -->
+                <sheet>
+                    <!-- <group> tags act like grid columns to align fields side-by-side beautifully -->
+                    <group>
+                        <!-- Left Column Grid Group -->
+                        <group string="expense">
+                            <field name="name"/>
+                            <field name="account_id"/>
+                            <field name="reason2"/>
                         </group>
-                    </sheet>
+                        <!-- Right Column Grid Group -->
+                        <group string="amount">
+                            <field name="amount"/>
+                            <field name="date" readonly="1"/> <!-- readonly="1" blocks users from typing in it -->
+                        </group>
+                        <group string="classification">
+                            <field name="operation" readonly="1"/>
+                            <field name="Class" readonly="1"/> 
+                            <field name="rubric" readonly="1"/>
+                            <field name="reason1" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
             </form>
         </field>
         
 
     </record>
-
+    
+    <!-- the order of the views (list ==> form) -->
     <record id="action_moroccan_raw_expenses" model="ir.actions.act_window">
         <field name="name">raw expenses</field>
         <field name="res_model">moroccan.raw.expenses</field>
         <field name="view_mode">list,form</field>
     </record>
 
+    <!-- where the button to acess the raw expense model should go (inside the account.menu_finance drop down) -->
     <menuitem id="menu_moroccan_raw_expenses_root"
               name="raw expenses"
               parent="account.menu_finance" 

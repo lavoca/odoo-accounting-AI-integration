@@ -5,6 +5,8 @@ services:
       - db
     ports:
       - "8069:8069"
+    env_file:
+      - .env
     volumes:
       # This maps your local custom folder to Odoo's internal custom folder
       - ./my_custom_addons:/mnt/extra-addons

@@ -10,6 +10,9 @@
         'views/raw_expenses_views.xml',
         
     ],
+     'external_dependencies': {
+        'python': ['litellm', 'pydantic', 'dotenv'],
+    },
     'installable': True,
     'application': False,
 }
