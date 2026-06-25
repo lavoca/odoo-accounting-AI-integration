@@ -50,9 +50,7 @@ class RawExpenses(models.Model):
                 "1. CLASSIFY BY OBJECT NATURE: Always classify based on the physical or economic nature of the item being transacted, NOT the client/vendor's industry or secondary actions.\n"
                 "2. MATERIAL FORM: Distinguish carefully between physical merchandise (bought for resale as-is), raw materials (bought for factory production/transformation), and intangible services.\n\n"
                 
-                "ISOLATED CLASSIFICATION EXCEPTIONS:\n"
-                "- If the description explicitly mentions factory byproducts, factory production waste, offcuts, or scraps (such as 'déchets de fabrication', 'chutes de métal', 'scrap metal'), "
-                "this is functionally a residual output of physical production. You MUST select and return '7121' as the compte_principal. Do NOT map these items to 7124 or 7127."
+                
             )
 
             
@@ -60,13 +58,17 @@ class RawExpenses(models.Model):
             try:
                 response1 = completion(
                     model = 'gemini/gemini-3.5-flash',
+                    fallbacks= [   
+                        'gemini/gemini-2.5-pro',     
+                        'gemini/gemini-2.5-flash',               
+                    ],
                     api_key = api_key,
                     messages = [
                                 {"role": "system", "content": system_prompt_step1}, #"You are an expert accountant specializing in the Moroccan Chart of Accounts (CGNC). Your task is to analyze raw business transaction text descriptions and map them to their correct 4-digit Principal Account Code.\n\nCRITICAL UNIVERSAL RULES:\n1. CLASSIFY BY OBJECT NATURE: Always classify based on the physical or economic nature of the item being transacted, NOT the client/vendor's industry or secondary actions (e.g., selling physical factory waste, scrap, or byproducts is a sale of physical goods, NOT a service).\n2. MATERIAL FORM: Distinguish carefully between physical merchandise (bought for resale as-is), raw materials (bought for factory production/transformation), and intangible services."}, # system prompt that containes the rules that the llm should follow
                                 {"role": "user", "content": f"Classify this business transaction: '{record.name}'"} # user prompt that contains the dynamic data to be analyzed by the llm
                                 ],
                     response_format = AccountDetails,
-                    temperature = 1.0
+                    temperature = 0.5
                 )
             except Exception as e:
                 # Log the messy technical details in the Odoo server terminal for debugging
@@ -96,7 +98,7 @@ class RawExpenses(models.Model):
             else:
                 raise UserError(f"AI returned code {llm_result1.compte_principal}, but it doesn't exist in Odoo's Chart of Accounts!\n "
                                 f"the reasoning is: {llm_result1.reasoning}\n"
-                                f"confidence level: {llm_result1.confidencescore}%")
+                                )
             
             
             system_prompt_step2 = (
@@ -116,6 +118,9 @@ class RawExpenses(models.Model):
             try:
                 response = completion(
                     model = 'gemini/gemini-2.5-flash-lite',
+                    fallbacks= [
+                        "gemini/gemini-3.1-flash-lite",                      
+                    ],
                     api_key = api_key,
                     messages = [
                                 {"role": "system", "content": system_prompt_step2}, # system prompt that containes the rules that the llm should follow
@@ -159,9 +164,12 @@ class RawExpenses(models.Model):
         
         for record in self:
             journal = self.env['account.move'].create({
+                
                 'move_type': 'entry', # choose to create into the journal entry database of the account.move model
                 'ref': record.name,
                 'date': record.date,
+                
+                
                 # One2many tables iare accessed like this (line_ids represents a row in the table)
                 'line_ids': [ 
                     # Line 1: The Debit (The AI's chosen expense account)
