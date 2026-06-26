@@ -40,17 +40,40 @@ class RawExpenses(models.Model):
     def action_categorize_ai(self):
         
         for record in self:
+            # search for all the accounts that start with either 7 or 6 representing the accounts in class 7 and 6
+            accounts = self.env['account.account'].search(['|', ('code', '=like', '6%'), ('code', '=like', '7%')])
+            # the dictionary where we will store the 4 digits accounts
+            rubric_map = {}
+            # for every account we found we need to extract the 4 first digits and insert them into the dictionary as key with the names as values 
+            for acc in accounts:
+                if acc.code and len(acc.code) >=4:
+                    four_digit_code = acc[:4]
+                    # check if the 4 digit code is not in the map dictionary to create a new set for it
+                    if four_digit_code not in rubric_map:
+                        # Initialize an empty set if this 4-digit root isn't in the map yet that will hold the names of the account that belong to every 4 digit code
+                        rubric_map[four_digit_code] = set()
+                        
+                    # Add the full name string directly to the set (prevents identical duplicates)
+                    if acc.name:
+                        rubric_map[four_digit_code].add(acc.name.strip())
+                    
+            # 2. Compile the sets into clean, full-sentence layout blocks for the LLM
+            pool_lines = []
+            for root_code in sorted(rubric_map.keys()):
+                # Join all unique full names with a semicolon
+                combined_names = "; ".join(sorted(list(rubric_map[root_code])))
+                pool_lines.append(f"{root_code} : [{combined_names}]")  
+            dynamic_parent_map = "\n".join(pool_lines)
             
             system_prompt_step1 = (
-                
                 "You are an expert accountant specializing in the Moroccan Chart of Accounts (CGNC). "
                 "Your task is to analyze raw business transaction text descriptions and map them directly to their correct 4-digit 'compte_principal'.\n\n"
-                
-                "CRITICAL UNIVERSAL RULES:\n"
-                "1. CLASSIFY BY OBJECT NATURE: Always classify based on the physical or economic nature of the item being transacted, NOT the client/vendor's industry or secondary actions.\n"
-                "2. MATERIAL FORM: Distinguish carefully between physical merchandise (bought for resale as-is), raw materials (bought for factory production/transformation), and intangible services.\n\n"
-                
-                
+                "AVAILABLE ACCOUNTS DICTIONARY:\n"
+                f"{dynamic_parent_map}\n\n"
+                "CRITICAL SELECTION RULES:\n"
+                "1. You MUST choose a 4-digit code that exists exactly as a prefix in the AVAILABLE ACCOUNTS DICTIONARY.\n"
+                "2. Analyze the economic nature of the transaction (e.g., check for export/abroad keywords vs. domestic names, "
+                "or raw materials vs. finished products) and match it to the most descriptive title in the dictionary."
             )
 
             
