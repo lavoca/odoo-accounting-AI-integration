@@ -14,7 +14,7 @@
                 <field name="date"/>
                 <field name="amount"/>
                 <field name="account_id"/>
-                <field name="state"/>                    
+                <field name="state"/>                   
             </list>
 
         </field>
@@ -32,6 +32,8 @@
                     <!-- type="object" tells Odoo that name refers to a Python function in your model. -->
                     <button name="action_categorize_ai" type="object" string="auto categorize (AI)" class="oe_highlight"/> <!--button to categorize with AI and invokes the action_categorize_ai function-->
                     <button name="action_post_to_accounting" type="object" string="create a journal entry" class="oe_highlight" invisible="state != 'categorized'"/> <!--button to post and create a new journal entry and invokes the action_post_to_accounting function-->
+                    <button name="action_update_accounting" type="object" string="update journal entry" class="oe_highlight" invisible="not is_updates_sync"/>
+                    <field name="is_updates_sync" invisible="1"/> <!--this field is not visible and we need to add it here in the xml just because odoo requires it to be in the xml so it can be accesed and used in an invisible condition like the field just above-->
                     <field name="state" widget="statusbar"/>
                 </header>
                 <!-- <sheet> creates the beautiful white paper canvas container look -->
@@ -48,6 +50,7 @@
                         <group string="amount">
                             <field name="amount"/>
                             <field name="date" readonly="1"/> <!-- readonly="1" blocks users from typing in it -->
+                            <field name="move_id"/> 
                         </group>
                         <group string="classification">
                             <field name="operation" readonly="1"/>

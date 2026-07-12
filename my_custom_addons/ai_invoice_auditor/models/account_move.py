@@ -62,3 +62,7 @@ class AccountMove(models.Model):
 
         # 5. If no fraud, proceed normally
         return super(AccountMove, self).action_post()
+    
+    
+        
+        

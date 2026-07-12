@@ -8,6 +8,7 @@
     'data': [
         'security/ir.model.access.csv',
         'views/raw_expenses_views.xml',
+        'views/account_move_expense_link.xml',
         
     ],
      'external_dependencies': {

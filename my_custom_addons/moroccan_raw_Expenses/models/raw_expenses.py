@@ -1,4 +1,4 @@
-from odoo import models, fields
+from odoo import models, fields, api
 from odoo.exceptions import UserError
 from litellm import completion
 from pydantic import BaseModel, Field
@@ -36,6 +36,11 @@ class RawExpenses(models.Model):
     reason1 = fields.Text(string="AI reasoning")
     reason2 = fields.Text(string="AI reasoning")
     state = fields.Selection([('draft','Draft'), ('categorized','Categorized'), ('posted', 'Posted')], default='draft')
+    # field that connects/links an expense to its posted journal entry in the account.move model
+    move_id = fields.Many2one('account.move', string="Journal Entry", readonly=True)
+    # computed field that has a dynamic value controlled by a function in the computed argument in this case its "_compute_is_out_of_sync" 
+    is_updates_sync = fields.Boolean(string="update Out of Sync", compute="_compute_is_out_of_sync")
+            
     
     def action_categorize_ai(self):
         
@@ -193,7 +198,7 @@ class RawExpenses(models.Model):
                 'date': record.date,
                 
                 
-                # One2many tables iare accessed like this (line_ids represents a row in the table)
+                # One2many tables are accessed like this (line_ids represents a row in the table)
                 'line_ids': [ 
                     # Line 1: The Debit (The AI's chosen expense account)
                     (0,0,{ # first 0 is if create, secod 0 is for the id, and the third argument is the data to post as a pythin dict.
@@ -216,6 +221,57 @@ class RawExpenses(models.Model):
                 # auto post the journal entry so it is not a draft
                 # lets comment it for now since we want the user to still review the entry before clicking post
                 #journal.action_post()
+                record.move_id = journal.id
                 record.state = 'posted'
             else:
                 raise UserError(f"failed to create a journal entry for {record.name}")
+            
+    # function that updates an existing journal entry from its expense 
+    # the way it is done is we delete the existing Entry for the given record then repost it with the new data by reccaling the post function       
+    # IMPORTANT: we only update journal entries that are still in a 'draft' state
+    def action_update_accounting(self):
+        for record in self:
+            # check if the record has an journal entry or not by using the move_id link that connects/points to the journal entries of a given record (raw expense)
+            if not record.move_id:
+                raise UserError("There is not Journal Entry for this record yet.\n Post it to create an entry.")
+            # check id the record's journal entry is already posted and not in a 'draft' state
+            if record.move_id.state == 'posted':
+                raise UserError("This Entry has been posted already, it cannot be changed")
+            
+            # if the code reaches here then it means we can safley delete the journal entry using unlink on move_id which points to the journal entry of the record
+            record.move_id.unlink()
+            
+            # after the deletion we create a new journal entry using the new data by calling the normal post function
+            record.action_post_to_accounting()
+            
+            
+    # this function is responseble for updating the journal entry upon changes in the expense fileds
+    # @api.depends tells Odoo: "Run this function instantly whenever any of these fields change!"
+    @api.depends('name', 'date', 'amount', 'account_id', 'state', 'move_id.ref', 'move_id.date', )
+    def _compute_is_out_of_sync(self): # watches the expenses fields if any of them changes we run this to make the update button visible in the view
+        for record in self:
+            
+            record.is_updates_sync = False # the button state starts as false/invisible
+            
+            if not record.move_id or record.state != 'posted': # if this is true then we dont have anything to update anyway so we skip this record
+                continue
+            
+            # check the header fileds outside the table in the journal entry
+            if record.name != record.move_id.ref or record.date != record.move_id.date:
+                record.is_updates_sync = True 
+                
+            # find the exact line in the table that has the debit amount related to the record.amount by matching the account name
+            journal_table_data = record.move_id.line_ids.filtered(lambda line: line.account_id == record.account_id)
+            
+            
+            # if we dont find it then the data is different thus we need to update
+            # this also acts as a way to check if the account_id is different in the table so we can update
+            if not journal_table_data:
+                record.is_updates_sync = True
+                
+            # if we find it then check if the debit amount is different if yes update if no then we dont need to show the update button 
+            elif journal_table_data[0].debit != record.amount:
+                record.is_updates_sync = True
+                
+            
+    
