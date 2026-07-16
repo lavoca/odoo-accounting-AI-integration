@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- this file rule applies a permanent, invisible filter to the database so users only see specific rows. -->
+
+    <data noupdate="1"> <!-- tells odoo to only crrate this rule once and not overide it in case of model upgrade -->
+        
+        <!-- creating a new rule in the ir.rule table -->
+        <record id="rule_raw_expense_personal" model="ir.rule">
+            <field name="name">Personal Raw Expenses Only</field>
+            
+            <!-- specify which table this rule applies to -->
+            <field name="model_id" ref="model_moroccan_raw_expenses"/>
+            
+            <!-- Who does this rule apply to? (Internal Employees) -->
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            
+            <!-- The Domain Filter -->
+            <!-- 'create_uid' is the user who created the record and user.id is the user who is currently looking at the screen -->
+            <!-- "domain_force" means always load this table with the condition of 'create_uid', '=', user.id -->
+            <field name="domain_force">[('create_uid', '=', user.id)]</field>
+            
+            <!-- Which operations does this block? -->
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="False"/> <!-- Creates don't need row-level filtering -->
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+    </data>
+</odoo>
+

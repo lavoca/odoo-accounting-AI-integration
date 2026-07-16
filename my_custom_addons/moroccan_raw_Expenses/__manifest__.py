@@ -7,6 +7,8 @@
     'depends': ['account'],
     'data': [
         'security/ir.model.access.csv',
+        'security/security_rules.xml',
+        'data/cron_job.xml',
         'views/raw_expenses_views.xml',
         'views/account_move_expense_link.xml',
         

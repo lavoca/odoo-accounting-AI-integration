@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 import os
 import logging
 import time
+from datetime import timedelta
 
 _logger = logging.getLogger(__name__)
 
@@ -273,5 +274,18 @@ class RawExpenses(models.Model):
             elif journal_table_data[0].debit != record.amount:
                 record.is_updates_sync = True
                 
-            
-    
+                
+    # @api.model tells odoo: this method runs on the whole model/record and not on only one record that is why we didnt loop over self like we always do becasue we are applying this to the whole model and its records        
+    @api.model
+    def _cron_cleanup_old_drafts(self):
+        
+        thirty_days_ago = fields.Date.today() - timedelta(days=30) # calculate the date 30 days ago in odoo
+        
+        month_older_drafts = self.search([ # search query on the whole model
+            ('state', '=', 'draft'), # search for the records that are still in draft state
+            ('date', '<', thirty_days_ago) # '<' means older than, so we search for records older than 30 days
+        ])
+        
+        if month_older_drafts:
+            _logger.info(f"CRON: Deleting {len(month_older_drafts)} old draft expenses.")
+            month_older_drafts.unlink() # unlink() is how we delete in odoo
