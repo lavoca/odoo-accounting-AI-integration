@@ -1,0 +1,78 @@
+# Odoo 19 AI Accounting & Auditing Suite
+
+A comprehensive Odoo 19 repository demonstrating custom module development, advanced ORM techniques, and modern AI integrations. This repository contains two distinct custom modules designed to automate and secure accounting workflows.
+
+---
+
+## Module 1: Moroccan AI Expense Categorizer (moroccan_ai_expense)
+
+An accounting staging area that ingests raw expense descriptions and uses a two-step LLM pipeline to automatically classify them under the Moroccan Chart of Accounts (Plan Comptable General Marocain - PCGM). Once verified, the system automates double-entry bookkeeping by generating official balanced Journal Entries in Odoo's core ledger.
+
+### The Business Problem
+Manual expense entry is slow and prone to human error. Accountants must read raw receipt descriptions (e.g., "Achat carburant Total") and manually map them to exact 6-digit accounting codes. While LLMs are good at semantic matching, they are prone to inventing fake accounting codes, making them dangerous to connect directly to a live financial ledger.
+
+### Solution & Architecture
+
+#### 1. The Staging Table Pattern
+AI should not write directly to an official accounting ledger. This module introduces a custom staging model (`moroccan.raw.expenses`). 
+* Users input raw expense text and amounts into this staging area.
+* The AI categorizes the expense and assigns a proposed account.
+* A human accountant reviews the staging record. Only when they click "Post to Accounting" does the system generate the official, legally binding Journal Entry (`account.move`).
+
+#### 2. Two-Step LLM Pipeline (Preventing Hallucinations)
+To guarantee the AI never invents a fake accounting code, the LLM integration (built with LiteLLM and Pydantic) is split into two strict steps:
+* **Step 1 (Semantic Guess):** The LLM reads the raw description and returns a general 4-digit principal account category (e.g., 6142 for Transport).
+* **Database Grounding:** The Odoo backend takes that 4-digit code and queries the live PostgreSQL database to find all active 6-digit accounts that actually exist in the company's system under that category.
+* **Step 2 (Strict Selection):** The exact list of active database accounts is injected into a second prompt. The LLM is forced to select a code exclusively from that provided list. Pydantic enforces the output schema, ensuring the Python backend receives a clean, usable data object.
+
+#### 3. Two-Way Data Synchronization
+To ensure the staging table and the official ledger always match, the module implements a two-way sync:
+* **Manual Push (Expense to Ledger):** If a user updates the raw expense, a Compute Field (`@api.depends`) calculates the difference between the staging record and the ledger. If they are out of sync, an "Update" button appears. To avoid partial-write inconsistencies in accounting lines, this uses a safe "delete and recreate" pattern on the draft journal entry.
+* **Automatic Reverse-Sync (Ledger to Expense):** If an accountant bypasses the staging table and edits the official Journal Entry directly, an overridden `write()` method on the `account.move` model catches the change and silently pushes the updated data back to the staging table.
+
+### Odoo Framework Features Demonstrated
+* **ORM & Database Manipulation:** Extensive use of `search`, `create`, `write`, `unlink`, and in-memory recordset filtering (`filtered`).
+* **Relational Data Structures:** Implementation of `Many2one` and `One2many` fields, including the use of Odoo's specific `(0, 0, {values})` command tuples to generate balancing debit and credit lines for Journal Entries.
+* **Security & Access Control:** 
+  * **ACLs** (`ir.model.access.csv`) to define table-level permissions.
+  * **Record Rules** (`ir.rule`) to enforce row-level security, ensuring standard employees can only view expenses they created.
+* **Automated Background Jobs:** A scheduled Cron job (`ir.cron`) that runs nightly to automatically delete abandoned draft expenses older than 30 days.
+* **Automated Testing:** Implementation of `TransactionCase` unit tests to verify the accounting generation logic in an isolated, rollback-protected test environment.
+* **UI/UX:** Custom XML form and list views, status bars, and cross-model navigation using notebook tabs.
+
+---
+
+## Module 2: AI Invoice Auditor & Security Logger (ai_invoice_auditor)
+
+An Odoo 19 module designed to intercept invoice confirmations, run security audits, and log blocked attempts. 
+
+### The Business Problem
+When an ERP system blocks an action (like a fraudulent invoice confirmation) by throwing a validation error, the database automatically rolls back the entire transaction. This means any "Audit Log" created during that transaction is erased, leaving the company with no record of the blocked security attempt.
+
+### Solution & Architecture
+
+#### 1. Independent Database Cursors (Bypassing Rollback)
+* **How it works:** When a validation error is triggered, the system opens a secondary database connection using `self.env.registry.cursor()` to save the security log.
+* **Why it matters:** This ensures the security log is permanently committed and saved to PostgreSQL before the main transaction is aborted and rolled back.
+
+#### 2. Inbound REST API (Controllers)
+* **How it works:** Utilizes Odoo's web framework (`http.Controller` and `@http.route`) to create an API endpoint at `/api/audits`.
+* **Why it matters:** Safely exposes the compiled audit logs as JSON to external compliance systems using Odoo's native user authentication (`auth='user'`).
+
+#### 3. QWeb PDF Reporting
+* **How it works:** Binds a custom print action to the Audit Log view using an HTML/CSS template styled with Bootstrap 5.
+* **Why it matters:** Automatically compiles complex relational database records into clean, printable PDF summaries for compliance managers.
+
+---
+
+## Technology Stack
+* **Framework:** Odoo 19
+* **Language:** Python 3.12
+* **Database:** PostgreSQL 15
+* **AI Integration:** LiteLLM, Pydantic, Google Gemini API (Configurable to OpenAI/Anthropic)
+
+## Installation
+1. Clone this repository into your Odoo custom addons directory.
+2. Install the required Python dependencies inside your Odoo environment: `pip install litellm pydantic`.
+3. Set your LLM API key as an environment variable (e.g., `GEMINI_API_KEY`).
+4. Update the Odoo App List and install the `moroccan_ai_expense` and `ai_invoice_auditor` modules.
