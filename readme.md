@@ -1,6 +1,6 @@
 # Odoo 19 AI Accounting & Auditing Suite
 
-A comprehensive Odoo 19 repository demonstrating custom module development, advanced ORM techniques, accounting workflow automation, security auditing, and modern AI integrations.
+A comprehensive Odoo 19 repository demonstrating custom module development, advanced ORM techniques, accounting workflow automation, security auditing and modern AI integrations.
 
 This repository contains two distinct custom modules designed to automate, secure, and extend accounting workflows inside Odoo.
 
