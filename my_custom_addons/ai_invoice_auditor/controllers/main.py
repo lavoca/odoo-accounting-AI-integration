@@ -4,6 +4,9 @@ from odoo.http import request
 
 # In Odoo, controllers must inherit from http.Controller
 class AIAuditController(http.Controller):
+    
+    # inside the controllers slef.env doesnt exist becasue the class doesnt inherit from models.Model but we inherit from http.Controller snd self is an ORM recordset inside an odoo table
+    # so to talk to the odoo database we have to use request.env because the request object represents the incoming HTTP web request and holds the user session and database environment
 
     # @http.route is the router. It defines the URL, the type of request, and the security.
     @http.route('/api/audits', type='http', auth='user', methods=['GET'], csrf=False)

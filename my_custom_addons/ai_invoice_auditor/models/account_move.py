@@ -15,7 +15,7 @@ class AccountMove(models.Model):
         total_amount = self.amount_total
         currency = self.currency_id.name
 
-        # 2. Package the data neatly for our future AI
+        # Package the data for the AI call
         invoice_data = {
             "customer": customer_name,
             "total": total_amount,
@@ -31,14 +31,14 @@ class AccountMove(models.Model):
                     "price": line.price_unit
                 })
 
-        # 3. MOCK AI CHECK: Let's pretend the AI flags any invoice over $200
+        # MOCK AI CHECK: Let's pretend the AI flags any invoice over $200
         _logger.info("Sending data to AI: %s", invoice_data)
         
         is_fraud = False
         if total_amount > 200:
             is_fraud = True  # The AI thinks this is suspicious!
 
-        # 4. Block the confirmation if fraud is detected
+        # Block the confirmation if fraud is detected
         # Only raise the error if the checkbox is NOT checked
         if is_fraud and not self.bypass_ai_check:
             # --- THE MAGIC TRICK: Open a new database cursor ---
@@ -46,7 +46,7 @@ class AccountMove(models.Model):
                 # Create a new 'Environment' that uses this new cursor
                 new_env = api.Environment(new_cr, self.env.uid, self.env.context)
                 
-                # Save the log using the NEW environment
+                # Save the log to the ai.audit.log table we created using the NEW environment
                 new_env['ai.audit.log'].create({
                     'name': "BLOCKED: High Value",
                     'invoice_id': self.id,
@@ -54,7 +54,7 @@ class AccountMove(models.Model):
                     'amount_total': total_amount,
                     'reason': f"AI flagged amount of {total_amount} {currency} as suspicious."
                 })
-            # ---------------------------------------------------
+           
 
             # Now raise the error. This destroys the main transaction, 
             # but our secret transaction above is already safely saved!

@@ -42,7 +42,7 @@ class AccountMove(models.Model):
                     
                     if 'line_ids' in vals:
                         
-                        line_ids = vals['line_ids'] # get hold of the table cahnges array in the vals dict
+                        line_ids = vals['line_ids'] # get hold of the table changes array in the vals dict
                         
                         for line_tuple in line_ids: # loop over the array of tuples 
                             
@@ -63,6 +63,6 @@ class AccountMove(models.Model):
                                         
                                         
                                     
-                    linked_expense.write(updates) # call write methide that saves the model on the expense model
+                    linked_expense.write(updates) # call write methode that saves the model on the expense model
         return res
         

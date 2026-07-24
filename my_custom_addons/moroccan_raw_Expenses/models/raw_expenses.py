@@ -40,6 +40,7 @@ class RawExpenses(models.Model):
     # field that connects/links an expense to its posted journal entry in the account.move model
     move_id = fields.Many2one('account.move', string="Journal Entry", readonly=True)
     # computed field that has a dynamic value controlled by a function in the computed argument in this case its "_compute_is_out_of_sync" 
+    # compute="_compute_is_out_of_sync" tells odoo to run the function when we read this field in the database or when the view page is refreshed 
     is_updates_sync = fields.Boolean(string="update Out of Sync", compute="_compute_is_out_of_sync")
             
     
@@ -50,7 +51,7 @@ class RawExpenses(models.Model):
             accounts = self.env['account.account'].search(['|', ('code', '=like', '6%'), ('code', '=like', '7%')])
             # the dictionary where we will store the 4 digits accounts
             rubric_map = {}
-            # for every account we found we need to extract the 4 first digits and insert them into the dictionary as key with the names as values 
+            # for every account we found we need to extract the 4 first digits and insert them into the dictionary as keys with the names as values 
             for acc in accounts:
                 if acc.code and len(acc.code) >=4:
                     four_digit_code = acc[:4]
@@ -202,7 +203,7 @@ class RawExpenses(models.Model):
                 # One2many tables are accessed like this (line_ids represents a row in the table)
                 'line_ids': [ 
                     # Line 1: The Debit (The AI's chosen expense account)
-                    (0,0,{ # first 0 is if create, secod 0 is for the id, and the third argument is the data to post as a pythin dict.
+                    (0,0,{ # first 0 is if create, second 0 is for the id, and the third argument is the data to post as a python dict.
                         'account_id': record.account_id.id,
                         'name': record.name,
                         'debit': record.amount,
@@ -210,7 +211,7 @@ class RawExpenses(models.Model):
                     }),
                     # Line 2: The Credit (Where the money came from, e.g., Cash/Bank)
                     (0,0,{
-                        # for now we hardcode the 
+                        # for now we hardcode the account related to where the money came from 
                         'account_id': self.env['account.account'].search([('code', '=like', '5161%')], limit=1).id,
                         'name': record.name,
                         'debit': 0.0,
@@ -247,10 +248,14 @@ class RawExpenses(models.Model):
             
             
     # this function is responseble for updating the journal entry upon changes in the expense fileds
-    # @api.depends tells Odoo: "Run this function instantly whenever any of these fields change!"
+    # @api.depends tells Odoo: "Run this function instantly whenever any of these fields change"
+    # IMPORTANT: @api.depends triggers the function when a field changes in real time but we also need compute="_compute_is_out_of_sync" so it triggers the function the page reloads or when we read the field in the database
     @api.depends('name', 'date', 'amount', 'account_id', 'state', 'move_id.ref', 'move_id.date', )
     def _compute_is_out_of_sync(self): # watches the expenses fields if any of them changes we run this to make the update button visible in the view
+        
         for record in self:
+            
+            # the fields that get posted to the journal entry from expense are four (name, date, account_id and amount) so we only check for these fields if they are different
             
             record.is_updates_sync = False # the button state starts as false/invisible
             
