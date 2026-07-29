@@ -6,6 +6,8 @@ This repository contains two distinct custom modules designed to automate, secur
 
 ---
 
+<img src="assets\odoo_demo_gif.gif" width="100%" alt="Tool Demo">
+
 ## Modules
 
 * [Moroccan AI Expense Categorizer](#module-1-moroccan-ai-expense-categorizer-moroccan_ai_expense)

@@ -42,19 +42,22 @@ class RawExpenses(models.Model):
     # computed field that has a dynamic value controlled by a function in the computed argument in this case its "_compute_is_out_of_sync" 
     # compute="_compute_is_out_of_sync" tells odoo to run the function when we read this field in the database or when the view page is refreshed 
     is_updates_sync = fields.Boolean(string="update Out of Sync", compute="_compute_is_out_of_sync")
+    # the active company for a given recrod
+    company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env.company)
             
     
     def action_categorize_ai(self):
         
         for record in self:
+           
             # search for all the accounts that start with either 7 or 6 representing the accounts in class 7 and 6
             accounts = self.env['account.account'].search(['|', ('code', '=like', '6%'), ('code', '=like', '7%')])
             # the dictionary where we will store the 4 digits accounts
             rubric_map = {}
             # for every account we found we need to extract the 4 first digits and insert them into the dictionary as keys with the names as values 
             for acc in accounts:
-                if acc.code and len(acc.code) >=4:
-                    four_digit_code = acc[:4]
+                if acc.code and len(acc.code) >=4: # .code gets the string inside 
+                    four_digit_code = acc.code[:4]
                     # check if the 4 digit code is not in the map dictionary to create a new set for it
                     if four_digit_code not in rubric_map:
                         # Initialize an empty set if this 4-digit root isn't in the map yet that will hold the names of the account that belong to every 4 digit code
@@ -82,21 +85,34 @@ class RawExpenses(models.Model):
                 "2. Analyze the economic nature of the transaction (e.g., check for export/abroad keywords vs. domestic names, "
                 "or raw materials vs. finished products) and match it to the most descriptive title in the dictionary."
             )
+            
+            messages_payload = [
+                {"role": "system", "content": system_prompt_step1},  # system prompt that containes the rules that the llm should follow
+                {"role": "user", "content": f"Classify this business transaction: '{record.name}'"} # user prompt that contains the dynamic data to be analyzed by the llm
+            ]
+
+            # 2. LOG THE LOCAL UNBIASED TEXT DICTIONARY GENERATED FROM ODOO
+            _logger.info("================ [LOCAL ODOO DATA] DYNAMIC DICTIONARY MAP ================")
+            _logger.info("\n%s", dynamic_parent_map)
+            _logger.info("==========================================================================")
+
+            # 3. LOG THE EXACT STRING CONTENT SENT TO THE OUTBOUND API FOR REVIEW
+            _logger.info("================ [OUTBOUND API] FULL STEP 1 PROMPTS SENT =================")
+            for msg in messages_payload:
+                _logger.info("ROLE: %s | CONTENT: %s", msg['role'].upper(), msg['content'])
+            _logger.info("==========================================================================")
 
             
             time.sleep(3)
             try:
                 response1 = completion(
-                    model = 'gemini/gemini-3.5-flash',
+                    model = 'gemini/gemini-2.5-flash',
                     fallbacks= [   
                         'gemini/gemini-2.5-pro',     
-                        'gemini/gemini-2.5-flash',               
+                        'gemini/gemini-3.5-flash',               
                     ],
                     api_key = api_key,
-                    messages = [
-                                {"role": "system", "content": system_prompt_step1}, #"You are an expert accountant specializing in the Moroccan Chart of Accounts (CGNC). Your task is to analyze raw business transaction text descriptions and map them to their correct 4-digit Principal Account Code.\n\nCRITICAL UNIVERSAL RULES:\n1. CLASSIFY BY OBJECT NATURE: Always classify based on the physical or economic nature of the item being transacted, NOT the client/vendor's industry or secondary actions (e.g., selling physical factory waste, scrap, or byproducts is a sale of physical goods, NOT a service).\n2. MATERIAL FORM: Distinguish carefully between physical merchandise (bought for resale as-is), raw materials (bought for factory production/transformation), and intangible services."}, # system prompt that containes the rules that the llm should follow
-                                {"role": "user", "content": f"Classify this business transaction: '{record.name}'"} # user prompt that contains the dynamic data to be analyzed by the llm
-                                ],
+                    messages = messages_payload,
                     response_format = AccountDetails,
                     temperature = 0.5
                 )
@@ -175,6 +191,7 @@ class RawExpenses(models.Model):
             
             
             # search the odoo internal database of a model for the account number from the llm  
+            # the account number from the llm is a python type and we need an odoo account type that is why we search using the account from the llm the chart of accounts
             account = self.env['account.account'].search([('code', '=', llm_result.accountnumber)], limit=1)
 
             if account:
