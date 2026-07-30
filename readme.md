@@ -10,8 +10,8 @@ This repository contains two distinct custom modules designed to automate, secur
 
 ## Modules
 
-* [Moroccan AI Expense Categorizer](#module-1-moroccan-ai-expense-categorizer-moroccan_ai_expense)
-* [AI Invoice Auditor & Security Logger](#module-2-ai-invoice-auditor--security-logger-ai_invoice_auditor)
+* [Moroccan AI Expense Categorizer](https://github.com/lavoca/odoo-accounting-AI-integration/tree/main/my_custom_addons/moroccan_raw_Expenses)
+* [AI Invoice Auditor & Security Logger](https://github.com/lavoca/odoo-accounting-AI-integration/tree/main/my_custom_addons/ai_invoice_auditor)
 
 ---
 
