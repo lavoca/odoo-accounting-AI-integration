@@ -67,7 +67,7 @@ class RawExpenses(models.Model):
                     if acc.name:
                         rubric_map[four_digit_code].add(acc.name.strip())
                     
-            # 2. Compile the sets into clean, full-sentence layout blocks for the LLM
+            # Compile the sets into clean, full-sentence layout blocks for the LLM
             pool_lines = []
             for root_code in sorted(rubric_map.keys()):
                 # Join all unique full names with a semicolon
@@ -91,12 +91,12 @@ class RawExpenses(models.Model):
                 {"role": "user", "content": f"Classify this business transaction: '{record.name}'"} # user prompt that contains the dynamic data to be analyzed by the llm
             ]
 
-            # 2. LOG THE LOCAL UNBIASED TEXT DICTIONARY GENERATED FROM ODOO
+            # LOG THE LOCAL UNBIASED TEXT DICTIONARY GENERATED FROM ODOO
             _logger.info("================ [LOCAL ODOO DATA] DYNAMIC DICTIONARY MAP ================")
             _logger.info("\n%s", dynamic_parent_map)
             _logger.info("==========================================================================")
 
-            # 3. LOG THE EXACT STRING CONTENT SENT TO THE OUTBOUND API FOR REVIEW
+            # LOG THE EXACT STRING CONTENT SENT TO THE OUTBOUND API FOR REVIEW
             _logger.info("================ [OUTBOUND API] FULL STEP 1 PROMPTS SENT =================")
             for msg in messages_payload:
                 _logger.info("ROLE: %s | CONTENT: %s", msg['role'].upper(), msg['content'])
