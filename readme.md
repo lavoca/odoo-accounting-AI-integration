@@ -351,7 +351,7 @@ The modules include:
 
 ---
 
-# Module 2: AI Invoice Auditor & Security Logger
+# Module 2: Invoice Auditor & Security Logger
 
 **Technical module:** `ai_invoice_auditor`
 
