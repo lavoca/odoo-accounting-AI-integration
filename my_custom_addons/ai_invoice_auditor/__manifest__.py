@@ -4,6 +4,7 @@
     'summary': 'Intercepts and audits invoices using AI before validation.',
     'category': 'Accounting',
     'author': 'Your Name',
+    'license': 'GPL-3',
     'depends': ['account'],
     'data': [
         'security/ir.model.access.csv',
