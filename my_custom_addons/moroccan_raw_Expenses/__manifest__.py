@@ -4,6 +4,7 @@
     'summary': 'Classifies corporate expenses into the Moroccan Chart of Accounts via AI.',
     'category': 'Accounting',
     'author': 'Your Name',
+    'license': 'GPL-3',
     'depends': ['account'],
     'data': [
         'security/ir.model.access.csv',
